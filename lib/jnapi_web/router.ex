@@ -25,4 +25,10 @@ defmodule JNApiWeb.Router do
   scope "/api/v1", JNApiWeb.Api.V1, as: :api_v1 do
     pipe_through [:api, :api_protected]
   end
+
+  scope "/api/v1/accounts", JNApiWeb.Api.V1, as: :api_v1_accounts do
+    pipe_through [:api, :api_protected]
+
+    get "/owned", AccountController, :owned
+  end
 end
