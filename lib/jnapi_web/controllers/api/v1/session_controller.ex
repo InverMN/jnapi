@@ -1,7 +1,7 @@
 defmodule JNApiWeb.Api.V1.SessionController do
   use JNApiWeb, :controller
 
-  alias JNApiWeb.ApiAuthPlug
+  alias JNApiWeb.Plug.Auth
   alias Plug.Conn
 
   @spec create(Conn.t(), map()) :: Conn.t()
@@ -24,7 +24,7 @@ defmodule JNApiWeb.Api.V1.SessionController do
     config = Pow.Plug.fetch_config(conn)
 
     conn
-    |> ApiAuthPlug.renew(config)
+    |> Auth.renew(config)
     |> case do
       {conn, nil} ->
         conn
