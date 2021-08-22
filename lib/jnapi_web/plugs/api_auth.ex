@@ -1,4 +1,4 @@
-defmodule JNApiWeb.ApiAuthPlug do
+defmodule JNApiWeb.Plug.Auth do
   @moduledoc false
   use Pow.Plug.Base
 

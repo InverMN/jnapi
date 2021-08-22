@@ -1,4 +1,4 @@
-defmodule JNApiWeb.APIAuthErrorHandler do
+defmodule JNApiWeb.ErrorHandler.AuthErrorHandler do
   use JNApiWeb, :controller
   alias Plug.Conn
 

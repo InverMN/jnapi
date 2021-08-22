@@ -3,7 +3,7 @@ defmodule JNApiWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
-    plug JNApiWeb.ApiAuthPlug, otp_app: :jnapi
+    plug JNApiWeb.Plug.Auth, otp_app: :jnapi
     plug Accent.Plug.Response,
       default_case: Accent.Case.Camel,
       header: "name-case",
@@ -15,7 +15,7 @@ defmodule JNApiWeb.Router do
   end
 
   pipeline :api_protected do
-    plug Pow.Plug.RequireAuthenticated, error_handler: JNApiWeb.APIAuthErrorHandler
+    plug Pow.Plug.RequireAuthenticated, error_handler: JNApiWeb.ErrorHandler.Auth
   end
 
   scope "/api/v1", JNApiWeb.Api.V1, as: :api_v1 do
