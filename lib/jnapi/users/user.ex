@@ -2,6 +2,7 @@ defmodule JNApi.Users.User do
   use Ecto.Schema
   use Pow.Ecto.Schema
 
+  @derive {Jason.Encoder, except: [:__meta__, :current_password, :password, :password_hash]}
   schema "users" do
     pow_user_fields()
 

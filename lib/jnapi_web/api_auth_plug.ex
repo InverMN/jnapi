@@ -109,7 +109,7 @@ defmodule JNApiWeb.ApiAuthPlug do
 
   defp fetch_access_token(conn) do
     case Conn.get_req_header(conn, "authorization") do
-      [token | _rest] -> {:ok, token}
+      ["Bearer " <> token | _rest] -> {:ok, token}
       _any            -> :error
     end
   end

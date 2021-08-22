@@ -42,7 +42,8 @@ defmodule JNApi.MixProject do
       {:telemetry_poller, "~> 0.4"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:pow, "~> 1.0"}
+      {:pow, "~> 1.0"},
+      {:accent, "~> 1.1"}
     ]
   end
 
