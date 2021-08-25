@@ -4,6 +4,7 @@ defmodule JNApiWeb.Plug.Auth do
 
   alias Plug.Conn
   alias Pow.Config
+  alias JNApi.Users
   alias JNApi.Users.User
   alias JNApi.Repo
   import Ecto.Query
@@ -50,8 +51,10 @@ defmodule JNApiWeb.Plug.Auth do
   @impl true
   @spec delete(Conn.t(), Config.t()) :: Conn.t()
   def delete(conn, _config) do
-    with {:ok, _token} <- fetch_token(conn) do
-    # delete token from database
+    with {:ok, token} <- fetch_token(conn),
+         {:ok, %{"jti" => jti, "exp" => exp} = claims} <- verify_token(token),
+         false <- Users.refresh_token_used?(jti) do
+      Users.put_refresh_token(%{ jti: jti, exp: exp })
     else
       _any -> :ok
     end
@@ -69,13 +72,12 @@ defmodule JNApiWeb.Plug.Auth do
   @spec renew(Conn.t(), Config.t()) :: {Conn.t(), map() | nil}
   def renew(conn, config) do
     with {:ok, token} <- fetch_token(conn),
-         {:ok, claims} <- verify_token(token),
+         {:ok, %{"jti" => jti, "exp" => exp, "user_id" => user_id} = claims} <- verify_token(token),
          :ok <- has_use(claims, "refresh"),
          :ok <- has_not_expired(claims),
-         user <- Repo.one!(from u in User, where: u.id == ^claims.user_id) do
-
-      #put new token and delete old
-
+         false <- Users.refresh_token_used?(jti),
+         user <- Repo.one!(from u in User, where: u.id == ^user_id) do
+      Users.put_refresh_token(%{ jti: jti, exp: exp })
       create(conn, user, config)
     else
       _any -> {conn, nil}

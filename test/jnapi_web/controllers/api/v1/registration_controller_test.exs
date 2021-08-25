@@ -17,7 +17,7 @@ defmodule JNApiWeb.Api.V1.RegistrationControllerTest do
 
       assert json = json_response(conn, 200)
       assert json["data"]["access_token"]
-      assert json["data"]["renewal_token"]
+      assert json["data"]["refresh_token"]
     end
 
     test "with invalid params", %{conn: conn} do

@@ -17,26 +17,26 @@ defmodule JNApiWeb.Plug.AuthTest do
   test "can create, fetch, renew, and delete session", %{conn: conn, user: user} do
     assert {_no_auth_conn, nil} = Auth.fetch(conn, @pow_config)
 
-    assert {%{private: %{api_access_token: access_token, api_renewal_token: renewal_token}}, ^user} =
+    assert {%{private: %{api_access_token: access_token, api_refresh_token: refresh_token}}, ^user} =
         Auth.create(conn, user, @pow_config)
 
     :timer.sleep(100)
 
     assert {_conn, ^user} = Auth.fetch(with_auth_header(conn, access_token), @pow_config)
-    assert {%{private: %{api_access_token: renewed_access_token, api_renewal_token: renewed_renewal_token}}, ^user} =
-      Auth.renew(with_auth_header(conn, renewal_token), @pow_config)
+    assert {%{private: %{api_access_token: new_access_token, api_refresh_token: new_refresh_token}}, ^user} =
+      Auth.renew(with_auth_header(conn, refresh_token), @pow_config)
 
     :timer.sleep(100)
 
-    assert {_conn, nil} = Auth.fetch(with_auth_header(conn, access_token), @pow_config)
-    assert {_conn, nil} = Auth.renew(with_auth_header(conn, renewal_token), @pow_config)
-    assert {_conn, ^user} = Auth.fetch(with_auth_header(conn, renewed_access_token), @pow_config)
+    assert {_conn, _user} = Auth.fetch(with_auth_header(conn, access_token), @pow_config)
+    assert {_conn, nil} = Auth.renew(with_auth_header(conn, refresh_token), @pow_config)
+    assert {_conn, ^user} = Auth.fetch(with_auth_header(conn, new_access_token), @pow_config)
 
-    Auth.delete(with_auth_header(conn, renewed_access_token), @pow_config)
+    Auth.delete(with_auth_header(conn, new_refresh_token), @pow_config)
     :timer.sleep(100)
 
-    assert {_conn, nil} = Auth.fetch(with_auth_header(conn, renewed_access_token), @pow_config)
-    assert {_conn, nil} = Auth.renew(with_auth_header(conn, renewed_renewal_token), @pow_config)
+    assert {_conn, _user} = Auth.fetch(with_auth_header(conn, new_access_token), @pow_config)
+    assert {_conn, nil} = Auth.renew(with_auth_header(conn, new_refresh_token), @pow_config)
   end
 
   defp with_auth_header(conn, token), do: Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> token)
