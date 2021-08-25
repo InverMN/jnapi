@@ -4,6 +4,7 @@ defmodule JNApi.Repo.Migrations.CreateRefreshTokens do
   def change do
     create table(:refresh_tokens) do
       add :jti, :string
+      add :exp, :integer
     end
  
       create index("refresh_tokens", [:jti], unique: true, currently: true)
