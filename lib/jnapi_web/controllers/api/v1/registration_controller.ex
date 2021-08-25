@@ -11,7 +11,7 @@ defmodule JNApiWeb.Api.V1.RegistrationController do
     |> Pow.Plug.create_user(user_params)
     |> case do
       {:ok, _user, conn} ->
-        json(conn, %{data: %{access_token: conn.private.api_access_token, renewal_token: conn.private.api_renewal_token}})
+        json(conn, %{data: %{access_token: conn.private.api_access_token, refresh_token: conn.private.api_refresh_token}})
 
       {:error, changeset, conn} ->
         errors = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)

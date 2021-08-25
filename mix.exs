@@ -43,7 +43,8 @@ defmodule JNApi.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:pow, "~> 1.0"},
-      {:accent, "~> 1.1"}
+      {:accent, "~> 1.1"},
+      {:joken, "~> 2.0"}
     ]
   end
 

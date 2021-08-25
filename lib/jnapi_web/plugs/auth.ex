@@ -3,20 +3,22 @@ defmodule JNApiWeb.Plug.Auth do
   use Pow.Plug.Base
 
   alias Plug.Conn
-  alias Pow.{Config, Plug, Store.CredentialsCache}
-  alias PowPersistentSession.Store.PersistentSessionCache
+  alias Pow.Config
+  alias JNApi.Users.User
+  alias JNApi.Repo
+  import Ecto.Query
 
   @doc """
   Fetches the user from access token.
   """
   @impl true
   @spec fetch(Conn.t(), Config.t()) :: {Conn.t(), map() | nil}
-  def fetch(conn, config) do
-  # Fetch token, valid it and read contained userId
-  # Authorization: bearer {token}
-    with {:ok, signed_token} <- fetch_access_token(conn),
-         {:ok, token}        <- verify_token(conn, signed_token, config),
-         {user, _metadata}   <- CredentialsCache.get(store_config(config), token) do
+  def fetch(conn, _config) do
+    with {:ok, token} <- fetch_token(conn),
+         {:ok, %{"user_id" => user_id} = claims} <- verify_token(token),
+         :ok <- has_use(claims, "access"),
+         :ok <- has_not_expired(claims), 
+         user <- Repo.one!(from u in User, where: u.id == ^user_id) do
       {conn, user}
     else
       _any -> {conn, nil}
@@ -24,51 +26,32 @@ defmodule JNApiWeb.Plug.Auth do
   end
 
   @doc """
-  Creates an access and renewal token for the user.
+  Creates an access and refresh token for the user.
 
   The tokens are added to the `conn.private` as `:api_access_token` and
-  `:api_renewal_token`. The renewal token is stored in the access token
+  `:api_refresh_token`. The refresh token is stored in the access token
   metadata and vice versa.
   """
   @impl true
   @spec create(Conn.t(), map(), Config.t()) :: {Conn.t(), map()}
-  def create(conn, user, config) do
-    # Crete payload {user_idd: 123}
-    # Create JWT tokens with different TTL
-    store_config  = store_config(config)
-    access_token  = Pow.UUID.generate()
-    renewal_token = Pow.UUID.generate()
-    conn          =
+  def create(conn, user, _config) do
+    token_claims = %{user_id: user.id}
+    conn =
       conn
-      |> Conn.put_private(:api_access_token, sign_token(conn, access_token, config))
-      |> Conn.put_private(:api_renewal_token, sign_token(conn, renewal_token, config))
-
-    # The store caches will use their default `:ttl` settting. To change the
-    # `:ttl`, `Keyword.put(store_config, :ttl, :timer.minutes(10))` can be
-    # passed in as the first argument instead of `store_config`.
-    CredentialsCache.put(store_config, access_token, {user, [renewal_token: renewal_token]})
-    PersistentSessionCache.put(store_config, renewal_token, {user, [access_token: access_token]})
+      |> Conn.put_private(:api_access_token, sign_token!(:access_token, token_claims))
+      |> Conn.put_private(:api_refresh_token, sign_token!(:refresh_token, token_claims))
 
     {conn, user}
   end
 
   @doc """
-  Delete the access token from the cache.
-
-  The renewal token is deleted by fetching it from the access token metadata.
+  The refresh token is deleted.
   """
   @impl true
   @spec delete(Conn.t(), Config.t()) :: Conn.t()
-  def delete(conn, config) do
-    # Get refresh token and put it to persistent session cache
-    store_config = store_config(config)
-
-    with {:ok, signed_token} <- fetch_access_token(conn),
-         {:ok, token}        <- verify_token(conn, signed_token, config),
-         {_user, metadata}   <- CredentialsCache.get(store_config, token) do
-
-      PersistentSessionCache.delete(store_config, metadata[:renewal_token])
-      CredentialsCache.delete(store_config, token)
+  def delete(conn, _config) do
+    with {:ok, _token} <- fetch_token(conn) do
+    # delete token from database
     else
       _any -> :ok
     end
@@ -85,15 +68,13 @@ defmodule JNApiWeb.Plug.Auth do
   """
   @spec renew(Conn.t(), Config.t()) :: {Conn.t(), map() | nil}
   def renew(conn, config) do
-    # Read refresh token, valid it, check whenever is blaclisted, if no - blacklist and return new token pair
-    store_config = store_config(config)
+    with {:ok, token} <- fetch_token(conn),
+         {:ok, claims} <- verify_token(token),
+         :ok <- has_use(claims, "refresh"),
+         :ok <- has_not_expired(claims),
+         user <- Repo.one!(from u in User, where: u.id == ^claims.user_id) do
 
-    with {:ok, signed_token} <- fetch_access_token(conn),
-         {:ok, token}        <- verify_token(conn, signed_token, config),
-         {user, metadata}    <- PersistentSessionCache.get(store_config, token) do
-
-      CredentialsCache.delete(store_config, metadata[:access_token])
-      PersistentSessionCache.delete(store_config, token)
+      #put new token and delete old
 
       create(conn, user, config)
     else
@@ -101,25 +82,52 @@ defmodule JNApiWeb.Plug.Auth do
     end
   end
 
-  defp sign_token(conn, token, config) do
-    Plug.sign_token(conn, signing_salt(), token, config)
+  defp sign_token!(token_type, extra_claims) do
+    extra_claims = Map.put(extra_claims, :use, token_usage(token_type))
+    extra_claims = Map.put(extra_claims, :exp, expiration_time(token_type))
+    JNApi.Token.generate_and_sign!(extra_claims)
   end
 
-  defp signing_salt(), do: Atom.to_string(__MODULE__)
-
-  defp fetch_access_token(conn) do
-    case Conn.get_req_header(conn, "authorization") do
-      ["Bearer " <> token | _rest] -> {:ok, token}
-      _any            -> :error
+  defp expiration_time(token_type) do
+    case token_type do
+      # 10 minutes
+      :access_token -> :os.system_time(:second) + 60 * 10
+      # 30 days
+      :refresh_token -> :os.system_time(:second) + 60 * 60 * 24 * 30
     end
   end
 
-  defp verify_token(conn, token, config),
-    do: Plug.verify_token(conn, signing_salt(), token, config)
+  defp token_usage(token_type) do
+    case token_type do
+      :access_token -> "access"
+      :refresh_token -> "refresh"
+      _ -> "unknown"
+    end
+  end
 
-  defp store_config(config) do
-    backend = Config.get(config, :cache_store_backend, Pow.Store.Backend.EtsCache)
+  defp fetch_token(conn) do
+    case Conn.get_req_header(conn, "authorization") do
+      ["Bearer " <> token | _rest] -> {:ok, token}
+      _any -> :error
+    end
+  end
 
-    [backend: backend, pow_config: config]
+  defp verify_token(token),
+    do: JNApi.Token.verify_and_validate(token)
+
+  defp has_use(%{"use" => given_use}, desired_use) do
+    if given_use == desired_use do
+      :ok
+    else
+      :invalid_token_use
+    end
+  end
+
+  defp has_not_expired(%{"exp" => expire_time}) do
+    if expire_time > :os.system_time(:second) do
+      :ok
+    else
+      :token_expired
+    end
   end
 end
