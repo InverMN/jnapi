@@ -25,7 +25,7 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
 
       assert json = json_response(conn, 200)
       assert json["data"]["access_token"]
-      assert json["data"]["renewal_token"]
+      assert json["data"]["refresh_token"]
     end
 
     test "with invalid params", %{conn: conn} do
@@ -37,15 +37,15 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
     end
   end
 
-  describe "renew/2" do
+  describe "refresh/2" do
     setup %{conn: conn} do
       authed_conn = post(conn, Routes.api_v1_session_path(conn, :create, @valid_params))
       :timer.sleep(100)
 
-      {:ok, renewal_token: authed_conn.private[:api_renewal_token]}
+      {:ok, refresh_token: authed_conn.private[:api_refresh_token]}
     end
 
-    test "with valid authorization header", %{conn: conn, renewal_token: token} do
+    test "with valid authorization header", %{conn: conn, refresh_token: token} do
       conn =
         conn
         |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
@@ -53,7 +53,7 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
 
       assert json = json_response(conn, 200)
       assert json["data"]["access_token"]
-      assert json["data"]["renewal_token"]
+      assert json["data"]["refresh_token"]
     end
 
     test "with invalid authorization header", %{conn: conn} do

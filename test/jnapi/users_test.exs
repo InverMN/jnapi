@@ -13,18 +13,27 @@ defmodule JNApi.UsersTest do
       {:ok, refresh_token} =
         attrs
         |> Enum.into(@valid_attrs)
-        |> Users.create_refresh_token()
+        |> Users.put_refresh_token()
 
       refresh_token
     end
 
-    test "create_refresh_token/1 with valid data creates a refresh_token" do
-      assert {:ok, %RefreshToken{} = refresh_token} = Users.create_refresh_token(@valid_attrs)
+    test "put_refresh_token/1 with valid data creates a refresh_token" do
+      assert {:ok, %RefreshToken{} = refresh_token} = Users.put_refresh_token(@valid_attrs)
       assert refresh_token.jti == "321"
     end
 
     test "create_refresh_token/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Users.create_refresh_token(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Users.put_refresh_token(@invalid_attrs)
+    end
+
+    test "refresh_token_used?/1 when token used returns true" do
+      {:ok, %RefreshToken{} = refresh_token} = Users.put_refresh_token(@valid_attrs)
+      assert true = Users.refresh_token_used?(refresh_token.jti)
+    end
+
+    test "refresh_token_used?/1 when token not used returns false" do
+      assert not Users.refresh_token_used?("adwojwadj2e2dj")
     end
   end
 end

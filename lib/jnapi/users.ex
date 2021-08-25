@@ -4,7 +4,7 @@ defmodule JNApi.Users do
 
   alias JNApi.Users.RefreshToken
  
-  def create_refresh_token(attrs \\ %{}) do
+  def put_refresh_token(attrs \\ %{}) do
     %RefreshToken{}
     |> RefreshToken.changeset(attrs)
     |> Repo.insert()
