@@ -1,4 +1,4 @@
-defmodule JNApiWeb.Api.V1.SessionController do
+defmodule JNApiWeb.Api.V1.TokenController do
   use JNApiWeb, :controller
 
   alias JNApiWeb.Plug.Auth
@@ -19,8 +19,8 @@ defmodule JNApiWeb.Api.V1.SessionController do
     end
   end
 
-  @spec renew(Conn.t(), map()) :: Conn.t()
-  def renew(conn, _params) do
+  @spec refresh(Conn.t(), map()) :: Conn.t()
+  def refresh(conn, _params) do
     config = Pow.Plug.fetch_config(conn)
 
     conn
@@ -36,8 +36,8 @@ defmodule JNApiWeb.Api.V1.SessionController do
     end
   end
 
-  @spec delete(Conn.t(), map()) :: Conn.t()
-  def delete(conn, _params) do
+  @spec logout(Conn.t(), map()) :: Conn.t()
+  def logout(conn, _params) do
     conn
     |> Pow.Plug.delete()
     |> json(%{data: %{}})

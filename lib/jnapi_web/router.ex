@@ -22,8 +22,9 @@ defmodule JNApiWeb.Router do
     pipe_through :api
 
     resources "/registration", RegistrationController, singleton: true, only: [:create]
-    resources "/session", SessionController, singleton: true, only: [:create, :delete]
-    post "/session/renew", SessionController, :renew
+    post "/token/create", TokenController, :create
+    post "/token/refresh", TokenController, :refresh
+    delete "/auth/delete", TokenController, :logout
   end
 
   scope "/api/v1", JNApiWeb.Api.V1, as: :api_v1 do

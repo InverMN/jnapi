@@ -1,4 +1,4 @@
-defmodule JNApiWeb.Api.V1.SessionControllerTest do
+defmodule JNApiWeb.Api.V1.TokenControllerTest do
   use JNApiWeb.ConnCase
 
   alias JNApi.{Repo, Users.User}
@@ -21,7 +21,7 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
     @invalid_params %{"user" => %{"email" => "test@example.com", "password" => "invalid"}}
 
     test "with valid params", %{conn: conn} do
-      conn = post(conn, Routes.api_v1_session_path(conn, :create, @valid_params))
+      conn = post(conn, Routes.api_v1_token_path(conn, :create, @valid_params))
 
       assert json = json_response(conn, 200)
       assert json["data"]["access_token"]
@@ -29,7 +29,7 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
     end
 
     test "with invalid params", %{conn: conn} do
-      conn = post(conn, Routes.api_v1_session_path(conn, :create, @invalid_params))
+      conn = post(conn, Routes.api_v1_token_path(conn, :create, @invalid_params))
 
       assert json = json_response(conn, 401)
       assert json["error"]["message"] == "Invalid email or password"
@@ -39,7 +39,7 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
 
   describe "refresh/2" do
     setup %{conn: conn} do
-      authed_conn = post(conn, Routes.api_v1_session_path(conn, :create, @valid_params))
+      authed_conn = post(conn, Routes.api_v1_token_path(conn, :create, @valid_params))
       :timer.sleep(100)
 
       {:ok, refresh_token: authed_conn.private[:api_refresh_token]}
@@ -49,7 +49,7 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
       conn =
         conn
         |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
-        |> post(Routes.api_v1_session_path(conn, :renew))
+        |> post(Routes.api_v1_token_path(conn, :refresh))
 
       assert json = json_response(conn, 200)
       assert json["data"]["access_token"]
@@ -60,7 +60,7 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
       conn =
         conn
         |> Plug.Conn.put_req_header("authorization", "invalid")
-        |> post(Routes.api_v1_session_path(conn, :renew))
+        |> post(Routes.api_v1_token_path(conn, :refresh))
 
       assert json = json_response(conn, 401)
       assert json["error"]["message"] == "Invalid token"
@@ -70,7 +70,7 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
 
   describe "delete/2" do
     setup %{conn: conn} do
-      authed_conn = post(conn, Routes.api_v1_session_path(conn, :create, @valid_params))
+      authed_conn = post(conn, Routes.api_v1_token_path(conn, :create, @valid_params))
       :timer.sleep(100)
 
       {:ok, access_token: authed_conn.private[:api_access_token]}
@@ -80,7 +80,7 @@ defmodule JNApiWeb.Api.V1.SessionControllerTest do
       conn =
         conn
         |> Plug.Conn.put_req_header("authorization", token)
-        |> delete(Routes.api_v1_session_path(conn, :delete))
+        |> delete(Routes.api_v1_token_path(conn, :logout))
 
       assert json = json_response(conn, 200)
       assert json["data"] == %{}
