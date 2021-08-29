@@ -1,6 +1,5 @@
 defmodule JNApiWeb.Plug.Auth do
   @moduledoc false
-  use Pow.Plug.Base
 
   alias Plug.Conn
   alias Pow.Config
@@ -12,13 +11,12 @@ defmodule JNApiWeb.Plug.Auth do
   @doc """
   Fetches the user from access token.
   """
-  @impl true
   @spec fetch(Conn.t(), Config.t()) :: {Conn.t(), map() | nil}
   def fetch(conn, _config) do
     with {:ok, token} <- fetch_token(conn),
          {:ok, %{"user_id" => user_id} = claims} <- verify_token(token),
          :ok <- has_use(claims, "access"),
-         :ok <- has_not_expired(claims), 
+         :ok <- has_not_expired(claims),
          user <- Repo.one!(from u in User, where: u.id == ^user_id) do
       {conn, user}
     else
@@ -33,7 +31,6 @@ defmodule JNApiWeb.Plug.Auth do
   `:api_refresh_token`. The refresh token is stored in the access token
   metadata and vice versa.
   """
-  @impl true
   @spec create(Conn.t(), map(), Config.t()) :: {Conn.t(), map()}
   def create(conn, user, _config) do
     token_claims = %{user_id: user.id}
@@ -48,11 +45,10 @@ defmodule JNApiWeb.Plug.Auth do
   @doc """
   The refresh token is deleted.
   """
-  @impl true
   @spec delete(Conn.t(), Config.t()) :: Conn.t()
   def delete(conn, _config) do
     with {:ok, token} <- fetch_token(conn),
-         {:ok, %{"jti" => jti, "exp" => exp} = claims} <- verify_token(token),
+         {:ok, %{"jti" => jti, "exp" => exp}} <- verify_token(token),
          false <- Users.refresh_token_used?(jti) do
       Users.put_refresh_token(%{ jti: jti, exp: exp })
     else

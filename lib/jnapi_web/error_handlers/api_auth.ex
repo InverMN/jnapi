@@ -1,6 +1,5 @@
 defmodule JNApiWeb.ErrorHandler.Auth do
   use JNApiWeb, :controller
-  alias Plug.Conn
 
   def call(conn, :not_authenticated),
     do: response(conn, "Not authenticated")
