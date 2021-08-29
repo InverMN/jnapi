@@ -1,5 +1,6 @@
 defmodule JNApiWeb.Plug.Auth do
   @moduledoc false
+  use Pow.Plug.Base
 
   alias Plug.Conn
   alias Pow.Config
@@ -11,6 +12,7 @@ defmodule JNApiWeb.Plug.Auth do
   @doc """
   Fetches the user from access token.
   """
+  @impl true
   @spec fetch(Conn.t(), Config.t()) :: {Conn.t(), map() | nil}
   def fetch(conn, _config) do
     with {:ok, token} <- fetch_token(conn),
@@ -31,6 +33,7 @@ defmodule JNApiWeb.Plug.Auth do
   `:api_refresh_token`. The refresh token is stored in the access token
   metadata and vice versa.
   """
+  @impl true
   @spec create(Conn.t(), map(), Config.t()) :: {Conn.t(), map()}
   def create(conn, user, _config) do
     token_claims = %{user_id: user.id}
@@ -45,6 +48,7 @@ defmodule JNApiWeb.Plug.Auth do
   @doc """
   The refresh token is deleted.
   """
+  @impl true
   @spec delete(Conn.t(), Config.t()) :: Conn.t()
   def delete(conn, _config) do
     with {:ok, token} <- fetch_token(conn),
