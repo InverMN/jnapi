@@ -1,5 +1,5 @@
 defmodule JNApiWeb.Api.V1.RegistrationControllerTest do
-  use JNApiWeb.ConnCase
+  use JNApiWeb.ConnCase, async: true
 
   @password "secret1234"
 

@@ -1,5 +1,5 @@
 defmodule JNApiWeb.Api.V1.TokenControllerTest do
-  use JNApiWeb.ConnCase
+  use JNApiWeb.ConnCase, async: true
 
   alias JNApi.{Repo, Users.User}
 
@@ -12,7 +12,7 @@ defmodule JNApiWeb.Api.V1.TokenControllerTest do
       |> Repo.insert!()
 
     conn = put_req_header(conn, "name-case", "snake")
-    
+
     {:ok, user: user, conn: conn}
   end
 

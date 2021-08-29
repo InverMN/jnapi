@@ -1,5 +1,5 @@
 defmodule JNApi.UsersTest do
-  use JNApi.DataCase
+  use JNApi.DataCase, async: true
 
   alias JNApi.Users
 

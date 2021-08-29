@@ -1,5 +1,5 @@
 defmodule JNApiWeb.Plug.AuthTest do
-  use JNApiWeb.ConnCase
+  use JNApiWeb.ConnCase, async: true
   doctest JNApiWeb.Plug.Auth
 
   alias JNApiWeb.{Plug.Auth, Endpoint}
