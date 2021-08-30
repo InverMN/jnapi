@@ -31,6 +31,7 @@ defmodule JNApiWeb.Router do
     pipe_through [:api, :api_protected]
 
     resources "/tasks", TaskController, except: [:index, :edit, :new]
+    resources "/task_lists", TaskListController, except: [:index, :edit, :new]
   end
 
   scope "/api/v1/accounts", JNApiWeb.Api.V1, as: :api_v1_accounts do
